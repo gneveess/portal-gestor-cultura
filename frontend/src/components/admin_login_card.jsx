@@ -54,7 +54,7 @@ const AdminLoginCard = ({ onBack, onLoginSuccess }) => {
           <label className="block text-slate-300 mb-1 text-sm">Usuário Admin</label>
           <input 
             type="email" 
-            placeholder="admin@sistema.com" 
+            placeholder="**********" 
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -63,7 +63,7 @@ const AdminLoginCard = ({ onBack, onLoginSuccess }) => {
         </div>
         
         <div>
-          <label className="block text-slate-300 mb-1 text-sm">Senha Mestra</label>
+          <label className="block text-slate-300 mb-1 text-sm">Senha</label>
           <input 
             type="password" 
             placeholder="••••••••" 
@@ -79,7 +79,7 @@ const AdminLoginCard = ({ onBack, onLoginSuccess }) => {
           disabled={loading}
           className="mt-4 w-full bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 text-white font-bold py-3 rounded transition-all active:scale-95 flex justify-center"
         >
-          {loading ? 'Verificando...' : 'Acessar Painel'}
+          {loading ? 'Verificando...' : 'Entrar como Administrador'}
         </button>
       </form>
 

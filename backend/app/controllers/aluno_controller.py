@@ -1,48 +1,52 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models.tables import Aluno
+from app.models.tables import Aluno, Matricula, Turma
 
-# Cria o grupo de rotas "/alunos"
 bp = Blueprint('alunos', __name__, url_prefix='/alunos')
 
-@bp.route('/criar', methods=['POST'])
+# Rota para Cadastrar Aluno + Matricular em Turmas
+@bp.route('', methods=['POST'])
 def criar_aluno():
-    """
-    Recebe um JSON com os dados e cria um novo aluno no Banco.
-    Exemplo de JSON: { "nome": "João da Silva", "nascimento": "2000-01-01" }
-    """
     dados = request.json
-
-    # Validação simples
-    if not dados or 'nome' not in dados:
-        return jsonify({"erro": "O campo 'nome' é obrigatório"}), 400
+    
+    # 1. Validação Básica
+    if not dados.get('nome_completo'):
+        return jsonify({"erro": "Nome é obrigatório"}), 400
 
     try:
-        # Cria o objeto Aluno (O Python converte isso pra SQL sozinho)
+        # 2. Cria o Aluno
         novo_aluno = Aluno(
-            nome_completo=dados['nome'],
-            data_nascimento=dados.get('nascimento'), # .get evita erro se não vier
+            nome_completo=dados['nome_completo'],
+            data_nascimento=dados.get('data_nascimento'), # Formato YYYY-MM-DD
+            nome_responsavel=dados.get('nome_responsavel'),
             telefone=dados.get('telefone')
         )
+        
+        db.session.add(novo_aluno)
+        db.session.flush() # Gera o ID do aluno sem fechar a transação
 
-        db.session.add(novo_aluno) # Adiciona na sessão
-        db.session.commit()        # Salva de verdade no Banco
+        # 3. Processa as Matrículas (Se houver turmas selecionadas)
+        turmas_ids = dados.get('turmas_ids', []) # Espera uma lista: [1, 5, 8]
+        
+        for turma_id in turmas_ids:
+            # Verifica se a turma existe
+            turma = Turma.query.get(turma_id)
+            if turma:
+                nova_matricula = Matricula(
+                    aluno_id=novo_aluno.id,
+                    turma_id=turma.id
+                )
+                db.session.add(nova_matricula)
+
+        # 4. Salva TUDO (Aluno + Matrículas) de uma vez
+        db.session.commit()
 
         return jsonify({
-            "mensagem": "Aluno cadastrado com sucesso!", 
-            "id": novo_aluno.id,
-            "qr_code_token": str(novo_aluno.codigo_qr_token)
+            "mensagem": "Aluno cadastrado e matriculado com sucesso!",
+            "aluno_id": novo_aluno.id,
+            "qr_code": str(novo_aluno.codigo_qr_token)
         }), 201
 
     except Exception as e:
-        return jsonify({"erro": f"Erro ao salvar: {str(e)}"}), 500
-
-@bp.route('/', methods=['GET'])
-def listar_alunos():
-    """ Busca todos os alunos no banco e devolve em JSON """
-    alunos = Aluno.query.all()
-    
-    # Converte a lista de objetos Python para uma lista de JSONs
-    lista_json = [aluno.to_json() for aluno in alunos]
-    
-    return jsonify(lista_json), 200
+        db.session.rollback() # Cancela tudo se der erro
+        return jsonify({"erro": f"Erro ao cadastrar: {str(e)}"}), 500

@@ -49,4 +49,36 @@ def criar_aluno():
 
     except Exception as e:
         db.session.rollback() # Cancela tudo se der erro
-        return jsonify({"erro": f"Erro ao cadastrar: {str(e)}"}), 500
+        return jsonify({"erro": f"Erro ao cadastrar: {str(e)}"}), 
+        
+
+
+@bp.route('', methods=['GET'])
+def listar_alunos():
+    try:
+        # Busca todos os alunos
+        alunos = Aluno.query.order_by(Aluno.nome_completo).all()
+        
+        lista_alunos = []
+        for a in alunos:
+            # Tenta achar a turma que o aluno está (pega a primeira encontrada)
+            matricula = Matricula.query.filter_by(aluno_id=a.id).first()
+            nome_turma = "Sem Matrícula"
+            
+            if matricula:
+                turma = Turma.query.get(matricula.turma_id)
+                if turma:
+                    nome_turma = turma.nome
+
+            lista_alunos.append({
+                "id": a.id,
+                "nome": a.nome_completo,
+                "matricula": str(a.id).zfill(5), # Ex: transforma id 1 em "00001"
+                "turma": nome_turma,
+                "status": "ativo" if a.ativo else "inativo",
+                "foto": None # Se tiver campo foto no banco, coloque aqui
+            })
+            
+        return jsonify(lista_alunos), 200
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500

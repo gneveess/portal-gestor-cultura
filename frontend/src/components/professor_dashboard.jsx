@@ -1,9 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { request } from '../api'
 
 const ProfessorDashboard = ({ onLogout }) => {
-  // Estado para controlar qual aba do menu está ativa
+  // 1. Estados (DEVEM FICAR DENTRO DO COMPONENTE)
   const [activeTab, setActiveTab] = useState('home')
+  const [nomeProfessor, setNomeProfessor] = useState('Professor')
 
+  // 2. Busca o nome salvo no navegador ao carregar a página
+  useEffect(() => {
+    const dadosSalvos = localStorage.getItem('usuario_dados')
+    if (dadosSalvos) {
+      try {
+        const usuario = JSON.parse(dadosSalvos)
+        // Pega apenas o primeiro nome para ficar bonito
+        const primeiroNome = usuario.nome.split(' ')[0]
+        setNomeProfessor(primeiroNome)
+      } catch (error) {
+        console.error("Erro ao ler dados do usuário:", error)
+      }
+    }
+  }, [])
+  
   return (
     <div className="w-full min-h-screen bg-slate-950 text-white font-sans relative">
       
@@ -20,7 +37,7 @@ const ProfessorDashboard = ({ onLogout }) => {
               </div>
             </div>
             <div>
-              <h2 className="text-xl font-bold">Olá, Professor!</h2>
+              <h2 className="text-xl font-bold">Olá, {nomeProfessor}!</h2>
               <p className="text-slate-400 text-xs flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                 Online agora
@@ -132,7 +149,7 @@ const ProfessorDashboard = ({ onLogout }) => {
           onClick={() => setActiveTab('classes')}
         />
 
-        {/* Botão Central de Ação (Scanner QR Code, por exemplo) */}
+        {/* Botão Central de Ação */}
         <div className="-mt-8">
           <button className="bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-lg shadow-blue-600/40 transition-transform hover:scale-105 active:scale-95">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>

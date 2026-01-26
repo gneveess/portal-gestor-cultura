@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { request } from '../api'; // <--- Importamos nossa função mágica
 
+
 const LoginCard = ({ onForgot, onLoginSuccess }) => {
   
   const [email, setEmail] = useState('');
@@ -38,7 +39,7 @@ const LoginCard = ({ onForgot, onLoginSuccess }) => {
   return (
     <section className="w-full max-w-sm bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
       <h2 className="text-2xl font-semibold text-white mb-6 text-center">
-        Login do Professor
+        Área do Professor
       </h2>
       
       <form className="flex flex-col gap-4" onSubmit={handleLogin}>

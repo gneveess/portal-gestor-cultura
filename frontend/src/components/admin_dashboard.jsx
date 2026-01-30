@@ -113,7 +113,17 @@ const AdminDashboard = ({ onLogout }) => {
       setLoading(false)
     }
   }
+  // Estado para controlar qual configuração está aberta ('security', 'members' ou null)
+  const [openSection, setOpenSection] = useState(null);
 
+  // Função para abrir/fechar
+  const toggleSection = (section) => {
+    if (openSection === section) {
+      setOpenSection(null); // Fecha se clicar no mesmo
+    } else {
+      setOpenSection(section); // Abre o novo
+    }
+  };
 
 
 
@@ -133,20 +143,23 @@ const AdminDashboard = ({ onLogout }) => {
 
   // Salvar NOVO USUÁRIO (Admin/Prof)
   const handleRegisterUser = async (e) => {
-    e.preventDefault()
-    setRegisteringUser(true)
+    e.preventDefault(); // Impede a página de recarregar
+
+    // Debug: Olha no console (F12) o que está indo. Tem que ter: name, email, password, type
+    console.log("Enviando para o Python:", userForm);
+
     try {
-      await request('/auth/create_user', 'POST', userForm)
-      alert(`Usuário ${userForm.name} criado com sucesso!`)
-      setUserForm({ name: '', email: '', password: '', type: 'professor' })
-      fetchData()
-      setActiveTab('home')
+      const data = await request('/auth/create_user', 'POST', userForm);
+
+      if (data && data.id) {
+        alert("Usuário criado com sucesso!");
+        setUserForm({ name: '', email: '', password: '', type: 'professor' }); // Reseta
+      }
     } catch (error) {
-      alert("Erro: " + error.message)
-    } finally {
-      setRegisteringUser(false)
+      console.error("Erro no cadastro:", error);
+      alert(error.message || "Erro desconhecido ao criar usuário.");
     }
-  }
+  };
 
   // Salvar NOVO ALUNO (Com vínculo de turmas)
   const handleRegisterStudent = async (e) => {
@@ -209,100 +222,138 @@ const AdminDashboard = ({ onLogout }) => {
   return (
     <div className="w-full min-h-screen bg-slate-950 text-white font-sans relative">
 
-      {/* CONTEÚDO PRINCIPAL */}
-      <main className="p-6 pb-28 animate-fade-in max-w-2xl mx-auto">
+      {/* CONTEÚDO PRINCIPAL - ESTILO CORPORATIVO/SAAS */}
+<main className="p-8 pb-28 animate-fade-in max-w-4xl mx-auto">
 
-        {/* Cabeçalho */}
-        <header className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 p-[2px]">
-              <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center border-2 border-transparent">
-                <span className="text-lg">🛡️</span>
-              </div>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Painel Admin</h2>
-              <p className="text-slate-400 text-xs flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                Sistema Ativo
-              </p>
-            </div>
+  {/* Cabeçalho Executivo */}
+  <header className="flex justify-between items-end mb-12 border-b border-slate-800 pb-6">
+    <div>
+      <h2 className="text-3xl font-light text-white tracking-tight">Visão Geral</h2>
+      <div className="flex items-center gap-3 mt-2">
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-wide">
+          Online
+        </span>
+        <p className="text-slate-500 text-sm">Gestão Administrativa</p>
+      </div>
+    </div>
+    
+    <div className="flex items-center gap-4">
+      <div className="text-right hidden sm:block">
+        <p className="text-white text-sm font-medium">Administrador</p>
+        <p className="text-slate-500 text-xs">admin@sistema.com</p>
+      </div>
+      <button 
+        onClick={onLogout} 
+        className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white transition-all"
+        title="Sair do Sistema"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+      </button>
+    </div>
+  </header>
+
+  {/* --- VIEW: HOME (DASHBOARD) --- */}
+  {activeTab === 'home' && (
+    <div className="animate-fade-in space-y-10">
+
+      {/* 1. KPIs (Indicadores de Performance) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Card KPI: Total de Membros */}
+        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
+          <div>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Colaboradores</p>
+            <h3 className="text-4xl font-light text-white">{users.length}</h3>
           </div>
-          <button onClick={onLogout} className="p-2 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-400 hover:border-red-900/50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+          <div className="p-4 bg-slate-800 rounded-lg text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" x2="20" y1="8" y2="14"/><line x1="23" x2="17" y1="11" y2="11"/></svg>
+          </div>
+        </div>
+
+        {/* Card KPI: Total de Turmas */}
+        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 flex items-center justify-between hover:border-slate-700 transition-colors">
+          <div>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Turmas Ativas</p>
+            <h3 className="text-4xl font-light text-white">{turmas.length}</h3>
+          </div>
+          <div className="p-4 bg-slate-800 rounded-lg text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 2. Tabela de Usuários (Estilo Enterprise) */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        
+        {/* Cabeçalho da Tabela (Barra de Ferramentas) */}
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+          <h3 className="text-white font-medium text-lg">Membros da Equipe</h3>
+          <button 
+            onClick={fetchData} 
+            className="text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-wider flex items-center gap-2 border border-slate-700 px-3 py-1.5 rounded hover:bg-slate-800"
+          >
+             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+             Sync
           </button>
-        </header>
+        </div>
 
+        {/* Cabeçalho das Colunas */}
+        <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-slate-950/30 border-b border-slate-800 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+          <div className="col-span-6">Colaborador</div>
+          <div className="col-span-4">Cargo / Função</div>
+          <div className="col-span-2 text-right">Ações</div>
+        </div>
 
-        {/* --- VIEW: HOME (DASHBOARD GERAL) --- */}
-        {activeTab === 'home' && (
-          <div className="animate-fade-in space-y-6">
-
-            {/* Atalho Grande: Cadastrar Aluno */}
-            <button
-              onClick={() => setActiveTab('create_student')}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 p-6 rounded-3xl shadow-lg shadow-blue-900/20 flex items-center justify-between group hover:scale-[1.02] transition-transform"
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-white/20 p-3 rounded-2xl text-white text-2xl">🎓</div>
-                <div className="text-left">
-                  <h3 className="font-bold text-lg text-white">Matricular Aluno</h3>
-                  <p className="text-blue-100 text-xs">Cadastrar e vincular turmas</p>
+        {/* Linhas da Tabela */}
+        <div className="divide-y divide-slate-800">
+          {users.map((user) => (
+            <div key={user.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-800/30 transition-colors group">
+              
+              {/* Coluna 1: Nome + Avatar */}
+              <div className="col-span-6 flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                  {user.nome.charAt(0).toUpperCase()}
                 </div>
+                <span className="text-slate-200 text-sm font-medium">{user.nome}</span>
               </div>
-              <div className="bg-white/10 p-2 rounded-full group-hover:bg-white/30 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-              </div>
-            </button>
 
-            {/* Card de Estatísticas */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 text-xs uppercase font-bold">Equipe</span>
-                <div className="text-3xl font-bold text-white mt-1">{users.length}</div>
+              {/* Coluna 2: Badge de Cargo */}
+              <div className="col-span-4">
+                <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                  user.tipo === 'admin' 
+                    ? 'bg-purple-500/5 text-purple-400 border-purple-500/20' 
+                    : 'bg-blue-500/5 text-blue-400 border-blue-500/20'
+                }`}>
+                  {user.tipo}
+                </span>
               </div>
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 text-xs uppercase font-bold">Turmas</span>
-                <div className="text-3xl font-bold text-white mt-1">{turmas.length}</div>
+
+              {/* Coluna 3: Ações */}
+              <div className="col-span-2 flex justify-end">
+                <button
+                  onClick={() => handleDeleteUser(user.id, user.nome)}
+                  className="text-slate-600 hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-500/10 opacity-0 group-hover:opacity-100"
+                  title="Remover acesso"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
               </div>
+
             </div>
+          ))}
 
-            {/* Lista de Usuários do Sistema */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-white font-bold text-lg">Usuários</h3>
-                <button onClick={fetchData} className="text-xs text-purple-400 hover:text-purple-300">Atualizar</button>
-              </div>
+          {users.length === 0 && (
+             <div className="px-6 py-8 text-center text-slate-500 text-sm">
+                Nenhum registro encontrado no sistema.
+             </div>
+          )}
+        </div>
+      </div>
 
-              <div className="space-y-3">
-                {users.map((user) => (
-                  <div key={user.id} className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 flex justify-between items-center hover:border-purple-500/30 transition group">
-                    <div className="flex gap-4 items-center">
-                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-lg ${user.tipo === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
-                        }`}>
-                        {user.nome.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h4 className="text-white font-medium">{user.nome}</h4>
-                        <span className="text-[10px] uppercase tracking-wide text-slate-500 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                          {user.tipo}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Botão de Excluir (Lixeira) */}
-                    <button
-                      onClick={() => handleDeleteUser(user.id, user.nome)}
-                      className="p-2 text-slate-600 hover:text-red-400 hover:bg-red-500/10 rounded-full transition"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
+    </div>
+  )}
+         
 
         {/* --- VIEW: TURMAS (LISTAGEM ATUALIZADA) --- */}
         {/* --- VIEW: TURMAS (LISTAGEM DE CARDS CLICÁVEIS) --- */}
@@ -522,8 +573,177 @@ const AdminDashboard = ({ onLogout }) => {
             )}
           </div>
         )}
+        {/* --- VIEW: SETTINGS (CONFIGURAÇÕES) --- */}
+{activeTab === 'settings' && (
+  <div className="animate-fade-in space-y-6 max-w-4xl mx-auto">
+    
+    <div className="flex items-center gap-3 mb-6">
+      <div className="p-3 bg-slate-800 rounded-xl">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div>
+        <h3 className="text-2xl font-bold text-white">Configurações</h3>
+        <p className="text-slate-400 text-sm">Gerencie segurança e membros da equipe</p>
+      </div>
+    </div>
 
+    {/* 1. ACORDEÃO DE SEGURANÇA */}
+    <div className={`bg-slate-900 border ${openSection === 'security' ? 'border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.15)]' : 'border-slate-800'} rounded-2xl overflow-hidden transition-all duration-300`}>
+      <button
+        onClick={() => toggleSection('security')}
+        className="w-full flex items-center justify-between p-6 hover:bg-slate-800/50 transition-colors"
+      >
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+          </div>
+          <div className="text-left">
+            <h4 className="text-lg font-bold text-white">Segurança</h4>
+            <p className="text-xs text-slate-500">Alterar senha e proteção</p>
+          </div>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`text-slate-500 transition-transform duration-300 ${openSection === 'security' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
+      </button>
 
+      {openSection === 'security' && (
+        <div className="p-6 pt-0 animate-fade-in border-t border-slate-800/50 mt-2">
+          <div className="space-y-4 max-w-lg mt-4">
+             {/* Inputs de Senha (Mantidos iguais ao seu layout) */}
+             <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Senha Atual</label>
+                <input type="password" placeholder="••••••••" className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-3 focus:border-purple-500 transition outline-none" />
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nova Senha</label>
+                  <input type="password" className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-3 focus:border-purple-500 transition outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Confirmar</label>
+                  <input type="password" className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-3 focus:border-purple-500 transition outline-none" />
+                </div>
+             </div>
+             <div className="pt-2">
+                <button className="bg-slate-800 hover:bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-bold transition-colors w-full md:w-auto shadow-lg">
+                  Atualizar Senha
+                </button>
+             </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* 2. ACORDEÃO DE MEMBROS (CORRIGIDO) */}
+    <div className={`bg-slate-900 border ${openSection === 'members' ? 'border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]' : 'border-slate-800'} rounded-2xl overflow-hidden transition-all duration-300 relative`}>
+      
+      <button
+        onClick={() => toggleSection('members')}
+        className="w-full flex items-center justify-between p-6 hover:bg-slate-800/50 transition-colors relative z-10"
+      >
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" x2="20" y1="8" y2="14" /><line x1="23" x2="17" y1="11" y2="11" /></svg>
+          </div>
+          <div className="text-left">
+            <h4 className="text-lg font-bold text-white">Equipe</h4>
+            <p className="text-xs text-slate-500">Cadastrar novos professores ou admins</p>
+          </div>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`text-slate-500 transition-transform duration-300 ${openSection === 'members' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+
+      {openSection === 'members' && (
+        <div className="p-6 pt-0 animate-fade-in border-t border-slate-800/50 mt-2 relative z-10">
+          
+          <form onSubmit={handleRegisterUser} className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              
+              {/* CORREÇÃO 1: userForm.name em vez de userForm.nome */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase">Nome Completo</label>
+                <input 
+                    type="text" 
+                    placeholder="Ex: João Silva" 
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-3 focus:border-blue-500 transition outline-none" 
+                    required 
+                    value={userForm.name || ''} 
+                    onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase">E-mail Corporativo</label>
+                <input 
+                    type="email" 
+                    placeholder="joao@escola.com" 
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-3 focus:border-blue-500 transition outline-none" 
+                    required 
+                    value={userForm.email || ''} 
+                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase">Senha de Acesso</label>
+                <input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-3 focus:border-blue-500 transition outline-none" 
+                    required 
+                    value={userForm.password || ''} 
+                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase">Cargo</label>
+                <div className="flex gap-2">
+                    <button 
+                        type="button" 
+                        onClick={() => setUserForm({ ...userForm, type: 'professor' })} 
+                        className={`flex-1 p-3 rounded-xl border font-bold text-sm transition ${userForm.type === 'professor' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-600'}`}
+                    >
+                        Professor
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={() => setUserForm({ ...userForm, type: 'admin' })} 
+                        className={`flex-1 p-3 rounded-xl border font-bold text-sm transition ${userForm.type === 'admin' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-600'}`}
+                    >
+                        Admin
+                    </button>
+                </div>
+              </div>
+
+              {/* CORREÇÃO 2: col-span-2 para ocupar a largura total em baixo */}
+              <div className="md:col-span-2 pt-2">
+                <button 
+                    disabled={registeringUser} 
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-[0.99]"
+                >
+                    {registeringUser ? 'Salvando...' : 'Cadastrar Membro'}
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+
+    {/* 3. ZONA DE PERIGO */}
+    <div className="pt-6 border-t border-slate-800/50">
+      <button
+        onClick={onLogout}
+        className="w-full flex items-center justify-center gap-2 text-red-400 hover:text-white hover:bg-red-500/10 border border-slate-800 hover:border-red-500/50 p-4 rounded-2xl transition-all duration-300 group"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+        <span>Encerrar Sessão</span>
+      </button>
+    </div>
+
+  </div>
+)}
 
 
         {/* --- VIEW: CREATE STUDENT (CADASTRO DE ALUNO) --- */}
@@ -598,8 +818,8 @@ const AdminDashboard = ({ onLogout }) => {
                           key={turma.id}
                           onClick={() => toggleTurmaSelection(turma.id)}
                           className={`p-4 rounded-xl border cursor-pointer transition-all flex justify-between items-center select-none ${isSelected
-                              ? 'bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-900/20'
-                              : 'bg-slate-950 border-slate-800 hover:border-slate-600'
+                            ? 'bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-900/20'
+                            : 'bg-slate-950 border-slate-800 hover:border-slate-600'
                             }`}
                         >
                           <div>
@@ -736,37 +956,120 @@ const AdminDashboard = ({ onLogout }) => {
 
           </div>
         )}
-
         {/* --- VIEW: CREATE USER (CADASTRO DE ADMIN/PROF) --- */}
         {activeTab === 'create_user' && (
-          <div className="animate-fade-in">
-            <h3 className="text-2xl font-bold text-white mb-6 text-center">Novo Usuário</h3>
-            <form onSubmit={handleRegisterUser} className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-5 backdrop-blur-sm">
+          <div className="animate-fade-in max-w-lg mx-auto"> {/* Adicionei max-w-lg para centralizar se a tela for grande */}
+
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-white mb-2">Novo Usuário</h3>
+              <p className="text-slate-400 text-sm">Cadastre um professor ou administrador para o sistema.</p>
+            </div>
+
+            <form
+              onSubmit={handleRegisterUser}
+              className="bg-slate-900/50 p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6 backdrop-blur-md"
+            >
+
+              {/* CAMPO: NOME */}
               <div className="space-y-2">
-                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">Nome</label>
-                <input type="text" required value={userForm.name} onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} className="w-full bg-slate-950 text-white p-3 rounded-xl border border-slate-800 focus:border-purple-500 outline-none" placeholder="Ex: Prof. Girafales" />
+                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">
+                  Nome Completo
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    autoComplete="name"
+                    value={userForm.name || ''} // Proteção contra erro de Uncontrolled Input
+                    onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                    className="w-full bg-slate-950 text-white p-4 pl-4 rounded-xl border border-slate-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-600"
+                    placeholder="Ex: Prof. Girafales"
+                  />
+                </div>
               </div>
+
+              {/* CAMPO: EMAIL */}
               <div className="space-y-2">
-                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">Email</label>
-                <input type="email" required value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} className="w-full bg-slate-950 text-white p-3 rounded-xl border border-slate-800 focus:border-purple-500 outline-none" placeholder="email@escola.com" />
+                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">
+                  Email Institucional
+                </label>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={userForm.email || ''}
+                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                  className="w-full bg-slate-950 text-white p-4 rounded-xl border border-slate-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-600"
+                  placeholder="email@escola.com"
+                />
               </div>
+
+              {/* CAMPO: SENHA */}
               <div className="space-y-2">
-                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">Senha</label>
-                <input type="password" required value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} className="w-full bg-slate-950 text-white p-3 rounded-xl border border-slate-800 focus:border-purple-500 outline-none" placeholder="******" />
+                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">
+                  Senha de Acesso
+                </label>
+                <input
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={userForm.password || ''}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  className="w-full bg-slate-950 text-white p-4 rounded-xl border border-slate-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-600"
+                  placeholder="••••••"
+                />
               </div>
 
+              {/* SELETOR DE TIPO (PROFESSOR / ADMIN) */}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setUserForm({ ...userForm, type: 'professor' })}
+                  className={`p-4 rounded-xl border font-bold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-1
+            ${userForm.type === 'professor'
+                      ? 'bg-blue-600/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.3)]'
+                      : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-600 hover:text-slate-300'
+                    }`}
+                >
+                  <span>👨‍🏫 Professor</span>
+                </button>
 
-
-
-
-              <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setUserForm({ ...userForm, type: 'professor' })} className={`p-3 rounded-xl border font-bold text-sm transition ${userForm.type === 'professor' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-950 text-slate-400 border-slate-800'}`}>Professor</button>
-                <button type="button" onClick={() => setUserForm({ ...userForm, type: 'admin' })} className={`p-3 rounded-xl border font-bold text-sm transition ${userForm.type === 'admin' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-950 text-slate-400 border-slate-800'}`}>Admin</button>
+                <button
+                  type="button"
+                  onClick={() => setUserForm({ ...userForm, type: 'admin' })}
+                  className={`p-4 rounded-xl border font-bold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-1
+            ${userForm.type === 'admin'
+                      ? 'bg-purple-600/20 border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.3)]'
+                      : 'bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-600 hover:text-slate-300'
+                    }`}
+                >
+                  <span>🛡️ Admin</span>
+                </button>
               </div>
-              <button disabled={registeringUser} className="w-full mt-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition">{registeringUser ? 'Salvando...' : 'Cadastrar Membro'}</button>
+
+              {/* BOTÃO DE SALVAR */}
+              <button
+                disabled={registeringUser}
+                className={`w-full mt-4 font-bold py-4 rounded-xl shadow-lg transition-all duration-300 transform active:scale-95
+          ${registeringUser
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-purple-900/20'
+                  }`}
+              >
+                {registeringUser ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                    Salvando...
+                  </span>
+                ) : (
+                  'Cadastrar Membro'
+                )}
+              </button>
+
             </form>
           </div>
         )}
+
 
       </main>
 
@@ -809,7 +1112,7 @@ const AdminDashboard = ({ onLogout }) => {
           icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>}
           label="Ajustes"
           active={activeTab === 'settings'}
-          onClick={() => alert("Em breve!")}
+          onClick={() => setActiveTab('settings')}
         />
 
       </nav>

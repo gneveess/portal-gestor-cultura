@@ -62,6 +62,7 @@ def delete_user(id):
 def create_user():
     dados = request.json
     
+    # 1. Validação (Confirma que o Frontend PRECISA mandar 'name')
     if not dados.get('email') or not dados.get('password') or not dados.get('name') or not dados.get('type'):
         return jsonify({"erro": "Todos os campos são obrigatórios."}), 400
 
@@ -69,37 +70,23 @@ def create_user():
         return jsonify({"erro": "Este e-mail já está em uso."}), 400
 
     try:
-        # Agora o generate_password_hash vai funcionar!
         senha_segura = generate_password_hash(dados['password'])
         
-        # Agora o TipoUsuario vai funcionar!
+        # Define o tipo baseado na string que vem do Front ('admin' ou 'professor')
         tipo_escolhido = TipoUsuario.ADMIN if dados['type'] == 'admin' else TipoUsuario.PROFESSOR
 
         novo_usuario = Usuario(
-            nome=dados['name'],
+            nome=dados['name'],   # <--- Aqui o Python pega o 'name' do JSON e coloca na coluna 'nome' do banco
             email=dados['email'],
             senha_hash=senha_segura,
             tipo=tipo_escolhido
         )
 
         db.session.add(novo_usuario)
-        db.session.flush()
-
-        # Atribuição de Turmas (Agora Turma também está importada!)
-        turmas_ids = dados.get('turmas_ids', [])
-        if turmas_ids and tipo_escolhido == TipoUsuario.PROFESSOR:
-            for t_id in turmas_ids:
-                turma = Turma.query.get(t_id)
-                if turma:
-                    turma.professor_id = novo_usuario.id
-
-        db.session.commit()
-
-        return jsonify({
-            "mensagem": "Usuário criado com sucesso!", 
-            "id": novo_usuario.id
-        }), 201
+        db.session.commit() # <--- IMPORTANTE: Troque flush() por commit() para salvar de verdade!
+        
+        return jsonify({"id": novo_usuario.id, "mensagem": "Sucesso!"}), 201
 
     except Exception as e:
-        db.session.rollback()
-        return jsonify({"erro": f"Erro interno ao criar usuário: {str(e)}"}), 500
+        db.session.rollback() # Cancela se der erro
+        return jsonify({"erro": str(e)}), 500

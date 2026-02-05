@@ -23,7 +23,7 @@ O principal diferencial do projeto é sua abordagem **Mobile First**, permitindo
 ## 🛠️ Tecnologias Utilizadas
 
 **Frontend:**
-* [React.js](https://reactjs.org/) (Sugerido)
+* [React.js](https://reactjs.org/) 
 * [Tailwind CSS](https://tailwindcss.com/) (Para estilização responsiva)
 * Lucide Icons / FontAwesome
 

@@ -15,7 +15,19 @@ const AdminDashboard = ({ onLogout }) => {
   // 1. Form de Usuário (Admin/Prof)
   const [userForm, setUserForm] = useState({ name: '', email: '', password: '', type: 'professor' })
   const [registeringUser, setRegisteringUser] = useState(false)
+  
+  // --- ESTADOS PARA PROFESSORES ---
+  const [searchTeacher, setSearchTeacher] = useState('')
+  const [professores, setProfessores] = useState([
+    { id: 1, name: "João Silva", email: "joao@escola.com", disciplina: "Teatro e Expressão", status: "ativo" },
+    { id: 2, name: "Maria Fernanda", email: "maria@escola.com", disciplina: "Dança Contemporânea", status: "ativo" },
+    { id: 3, name: "Carlos Eduardo", email: "carlos@escola.com", disciplina: "Música", status: "inativo" },
+  ])
 
+  const professoresFiltrados = professores.filter(prof => 
+    prof.name.toLowerCase().includes(searchTeacher.toLowerCase()) ||
+    prof.disciplina.toLowerCase().includes(searchTeacher.toLowerCase())
+  )
   // 2. Form de Aluno (Com seleção de turmas)
   const [studentForm, setStudentForm] = useState({
     nome_completo: '',
@@ -188,6 +200,10 @@ const AdminDashboard = ({ onLogout }) => {
       }
     })
   }
+  
+ 
+  
+
 
   // Função para Cadastrar Turma
   const handleRegisterClass = async (e) => {
@@ -458,6 +474,100 @@ const AdminDashboard = ({ onLogout }) => {
             </form>
           </div>
         )}
+        {/* --- VIEW: GESTÃO DE PROFESSORES --- */}
+        {activeTab === 'teachers' && (
+          <div className="animate-fade-in space-y-6">
+            
+            {/* Cabeçalho e Controles */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+               <div>
+                  <h3 className="text-2xl font-bold text-white">Corpo Docente</h3>
+                  <p className="text-slate-400 text-sm">{professores.length} professores na equipe.</p>
+               </div>
+
+               <div className="flex gap-3 w-full md:w-auto">
+                  {/* Barra de Busca */}
+                  <div className="relative group w-full md:w-64">
+                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-purple-400 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="16.65"/></svg>
+                     </div>
+                     <input 
+                        type="text"
+                        placeholder="Buscar por nome ou matéria..."
+                        value={searchTeacher}
+                        onChange={(e) => setSearchTeacher(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-slate-600"
+                     />
+                  </div>
+
+                  {/* Botão Novo Professor (Leva para a aba de cadastro) */}
+                  <button 
+                     onClick={() => setActiveTab('create_user')}
+                     className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-purple-900/20 active:scale-95 transition"
+                  >
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                     Novo
+                  </button>
+               </div>
+            </div>
+
+            {/* Grid de Professores */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+               {professoresFiltrados.length === 0 ? (
+                  <div className="col-span-full py-12 text-center border border-dashed border-slate-800 rounded-3xl">
+                     <p className="text-slate-500">Nenhum professor encontrado.</p>
+                  </div>
+               ) : (
+                  professoresFiltrados.map((prof) => (
+                     <div 
+                        key={prof.id}
+                        className="group bg-slate-900 border border-slate-800 p-5 rounded-2xl hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-900/10 transition-all duration-300 relative overflow-hidden"
+                     >
+                        {/* Indicador de Status (Bolinha) */}
+                        <div className="absolute top-5 right-5 flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{prof.status}</span>
+                            <div className={`w-2 h-2 rounded-full ${prof.status === 'ativo' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                           {/* Avatar Simulado e Info Principal */}
+                           <div className="flex items-center gap-4 mt-2">
+                               <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-lg font-bold text-purple-400 group-hover:scale-110 transition-transform duration-300">
+                                  {prof.name.split(' ').slice(0,2).map(n => n[0]).join('')}
+                               </div>
+                               <div>
+                                  <h4 className="text-white font-bold group-hover:text-purple-400 transition-colors">{prof.name}</h4>
+                                  <p className="text-xs text-slate-400">{prof.disciplina}</p>
+                               </div>
+                           </div>
+
+                           {/* Linha Divisória */}
+                           <div className="h-px w-full bg-slate-800/50"></div>
+
+                           {/* Contato / Ações */}
+                           <div className="flex items-center justify-between">
+                               <div className="flex items-center gap-2 text-xs text-slate-500">
+                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                   <span className="truncate max-w-[150px]">{prof.email}</span>
+                               </div>
+
+                               <div className="flex gap-2">
+                                   <button className="p-1.5 text-slate-500 hover:text-white hover:bg-purple-600 rounded-md transition-colors" title="Editar Perfil">
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                   </button>
+                                   <button className="p-1.5 text-slate-500 hover:text-white hover:bg-red-600 rounded-md transition-colors" title="Desativar Professor">
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                   </button>
+                               </div>
+                           </div>
+                        </div>
+                     </div>
+                  ))
+               )}
+            </div>
+
+          </div>
+        )}
         {/* --- TELA DE DETALHES DA TURMA --- */}
         {activeTab === 'class_details' && selectedClass && (
           <div className="animate-fade-in">
@@ -514,7 +624,7 @@ const AdminDashboard = ({ onLogout }) => {
                     className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-600"
                   />
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20 active:scale-95 transition">
+                <button onClick={() => setActiveTab('create_student')} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20 active:scale-95 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="5" y2="19" /><line x1="5" x2="19" y1="12" y2="12" /></svg>
                   Novo
                 </button>
@@ -1097,6 +1207,13 @@ const AdminDashboard = ({ onLogout }) => {
           label="Turmas"
           active={activeTab === 'classes'}
           onClick={() => setActiveTab('classes')}
+        />
+        
+        <NavButton
+          icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>}
+          label="Professores"
+          active={activeTab === 'teachers'}
+          onClick={() => setActiveTab('teachers')}
         />
 
 

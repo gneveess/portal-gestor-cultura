@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import LoginCard from './components/login_card.jsx'
-import AdminLoginCard from './components/admin_login_card.jsx'
-import ForgotPasswordCard from './components/forgot_password_card.jsx'
-import AdminDashboard from './components/admin_dashboard.jsx'
-import ProfessorDashboard from './components/professor_dashboard.jsx' // <--- Import Novo
+import LoginCard from './pages/login_card.jsx'
+import AdminLoginCard from './pages/admin_login_card.jsx'
+import ForgotPasswordCard from './pages/forgot_password_card.jsx'
+import AdminDashboard from './pages/admin_dashboard.jsx'
+import ProfessorDashboard from './pages/professor_dashboard.jsx' // <--- Import Novo
+import ClassroomManager from './pages/chamada_dashboard.jsx' // <--- Import Novo
+  
 
 function App() {
   // Estados possíveis: 'login', 'admin_login', 'admin_dashboard', 'professor_dashboard', 'forgot'
